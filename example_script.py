@@ -70,7 +70,7 @@ if __name__ == "__main__":
     tries = 0
     MAX_TRIES = 5
     while True:
-        logger.info(f'try {tries} time')
+        logger.info(f'Try {tries} time')
         start = time.time()
         status = translate_multiple_thread(chapters)
         end = time.time()
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         if status:
             break
         tries += 1
-        if tries >= 4:
+        if tries >= MAX_TRIES:
             logger.info('exceeed MAX_TRIES {MAX_TRIES}, break')
     with open('init.txt', 'w') as f_init, open('reflection.txt', 'w') as f_ref, open('final.txt', 'w') as f_final:
         for key in sorted(global_result):
