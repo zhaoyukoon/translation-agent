@@ -89,19 +89,4 @@ if __name__ == "__main__":
             f_ref.write(reflect+"\n")
             f_final.write(final)
 
-'''
-    print(f"Source text:\n\n{source_text}\n------------\n")
-    start = time.time()
-    translation = translate(
-        source_lang=source_lang,
-        target_lang=target_lang,
-        source_text=source_text,
-        country=country,
-    )
 
-    print(f"Translation:\n\n{translation}")
-    with open('result.1222.txt', 'w') as fout:
-        fout.write(translation)
-    end = time.time()
-    print(end-start)
-'''
