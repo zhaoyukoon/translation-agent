@@ -1,10 +1,9 @@
 import os
 from typing import List, Union
-import time
-import openai
-from icecream import ic
 import json
 import hashlib
+import openai
+import google.generativeai as genai
 from dotenv import load_dotenv
 from .prompts import (
     TRANSLATION_SYSTEM_MESSAGE,
@@ -30,17 +29,7 @@ client = openai.OpenAI(api_key=silicon_flow_api_key, base_url=base_url)
 # 配置 Google API
 genai.configure(api_key=google_api_key)
 
-MAX_TOKENS_PER_CHUNK = (
-    500  # if text is more than this many tokens, we'll break it up into
-)
-# discrete chunks to translate one chunk at a time
-
-import google.generativeai as genai
-
-CURRENT_MODEL = 'gemini-exp-1206'#'Qwen/Qwen2.5-72B-Instruct'
-CURRENT_MODEL = 'gemini-2.0-flash-experimental'
-CURRENT_MODEL = 'gemini-1.5-flash'
-CURRENT_MODEL = 'gemini-2.0-flash-exp'
+MAX_TOKENS_PER_CHUNK = 500  # 每个 chunk 的最大 token 数
 
 CACHE_DIR = "completion_cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
@@ -53,20 +42,19 @@ def get_cache_key(prompt: str, system_message: str, model: str) -> str:
 def get_completion(
     prompt: str,
     system_message: str = "You are a helpful assistant.",
-    model: str = CURRENT_MODEL,
+    model: str = 'gemini-2.0-flash-exp',
     temperature: float = 0.3,
-    google: bool = False,
     json_mode: bool = False,
 ) -> Union[str, dict]:
     """
-        Generate a completion using the OpenAI API.
+    Generate a completion using the OpenAI API.
 
     Args:
         prompt (str): The user's prompt or query.
         system_message (str, optional): The system message to set the context for the assistant.
             Defaults to "You are a helpful assistant.".
         model (str, optional): The name of the OpenAI model to use for generating the completion.
-            Defaults to "gpt-4-turbo".
+            Defaults to "gemini-2.0-flash-exp".
         temperature (float, optional): The sampling temperature for controlling the randomness of the generated text.
             Defaults to 0.3.
         json_mode (bool, optional): Whether to return the response in JSON format.
@@ -88,40 +76,26 @@ def get_completion(
             return json.load(f)['response']
     
     # 如果缓存不存在，调用原有的完成函数逻辑
-    if 'gemini'in model:
+    if 'gemini' in model:
         model = genai.GenerativeModel(model)
         response = model.generate_content(system_message + "\t" + prompt,
             generation_config=genai.types.GenerationConfig(
-            # Only one candidate for now.
-            candidate_count=1,
-            temperature=0.5,
+                candidate_count=1,
+                temperature=0.5,
             ),
         )
         response_text = response.text
     else:
-        if json_mode:
-            response = client.chat.completions.create(
-                model=model,
-                temperature=temperature,
-                top_p=1,
-                response_format={"type": "json_object"},
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": prompt},
-                ],
-            )
-            response_text = response.choices[0].message.content
-        else:
-            response = client.chat.completions.create(
-                model=model,
-                temperature=temperature,
-                top_p=1,
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": prompt},
-                ],
-            )
-            response_text = response.choices[0].message.content
+        response = client.chat.completions.create(
+            model=model,
+            temperature=temperature,
+            top_p=1,
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        response_text = response.choices[0].message.content
     
     # 保存结果到缓存
     cache_data = {
@@ -162,9 +136,7 @@ def one_chunk_initial_translation(
         source_text=source_text
     )
 
-    translation = get_completion(translation_prompt, system_message=system_message)
-
-    return translation
+    return get_completion(translation_prompt, system_message=system_message)
 
 
 def one_chunk_reflect_on_translation(
@@ -193,24 +165,20 @@ def one_chunk_reflect_on_translation(
         target_lang=target_lang
     )
 
-    if country:
-        reflection_prompt = REFLECTION_PROMPT_WITH_COUNTRY.format(
-            source_lang=source_lang,
-            target_lang=target_lang,
-            source_text=source_text,
-            translation_1=translation_1,
-            country=country
-        )
-    else:
-        reflection_prompt = REFLECTION_PROMPT.format(
-            source_lang=source_lang,
-            target_lang=target_lang,
-            source_text=source_text,
-            translation_1=translation_1
-        )
+    reflection_prompt = REFLECTION_PROMPT_WITH_COUNTRY.format(
+        source_lang=source_lang,
+        target_lang=target_lang,
+        source_text=source_text,
+        translation_1=translation_1,
+        country=country
+    ) if country else REFLECTION_PROMPT.format(
+        source_lang=source_lang,
+        target_lang=target_lang,
+        source_text=source_text,
+        translation_1=translation_1
+    )
 
-    reflection = get_completion(reflection_prompt, system_message=system_message)
-    return reflection
+    return get_completion(reflection_prompt, system_message=system_message)
 
 
 def one_chunk_improve_translation(
@@ -247,9 +215,7 @@ def one_chunk_improve_translation(
         reflection=reflection
     )
 
-    translation_2 = get_completion(prompt, system_message=system_message)
-
-    return translation_2
+    return get_completion(prompt, system_message=system_message)
 
 
 def one_chunk_translate_text(
@@ -298,20 +264,29 @@ def split_text(text, max_length):
 
 
 def translate(
-    source_lang,
-    target_lang,
-    source_text,
-    country,
-    max_tokens=MAX_TOKENS_PER_CHUNK,
-):
-    print(len(source_text))
+    source_lang: str,
+    target_lang: str,
+    source_text: str,
+    country: str = "",
+    max_tokens: int = MAX_TOKENS_PER_CHUNK,
+) -> str:
+    """
+    Translate the source_text from source_lang to target_lang.
 
-    """Translate the source_text from source_lang to target_lang."""
-    ic("Translating text as a single chunk")
+    Args:
+        source_lang (str): The source language of the text.
+        target_lang (str): The target language for the translation.
+        source_text (str): The text to be translated.
+        country (str): Country specified for the target language.
+        max_tokens (int): Maximum number of tokens per chunk.
+
+    Returns:
+        str: The improved translation of the source text.
+    """
+    print(len(source_text))
 
     final_translation_triple = one_chunk_translate_text(
         source_lang, target_lang, source_text, country
     )
 
     return final_translation_triple
-
