@@ -5,12 +5,21 @@ import openai
 from icecream import ic
 import json
 import hashlib
+from dotenv import load_dotenv
 
-silicon_flow_api_key = 'sk-iskuddjukcxxdeudrlfngjofyifccbkflggpgshvzvayduwb'#os.environ["SILICON_FLOW_API_KEY"]
-key = silicon_flow_api_key
+# 加载 .env 文件
+load_dotenv()
+
+# 替换原有的 key 定义
+silicon_flow_api_key = os.getenv("SILICON_FLOW_API_KEY")
+google_api_key = os.getenv("GOOGLE_API_KEY")
+
+# 配置 clients
 base_url = 'https://api.siliconflow.cn/v1'
-client = openai.OpenAI(api_key=key, base_url=base_url)
+client = openai.OpenAI(api_key=silicon_flow_api_key, base_url=base_url)
 
+# 配置 Google API
+genai.configure(api_key=google_api_key)
 
 MAX_TOKENS_PER_CHUNK = (
     500  # if text is more than this many tokens, we'll break it up into
@@ -18,10 +27,6 @@ MAX_TOKENS_PER_CHUNK = (
 # discrete chunks to translate one chunk at a time
 
 import google.generativeai as genai
-
-key='AIzaSyAu76U_nusRn39kQe5nVsXVfqk58zi3c-w'
-key='AIzaSyBFEHD-xfX1PnHmiKMsCoeww96qCHh8UXs'
-genai.configure(api_key=key)
 
 CURRENT_MODEL = 'gemini-exp-1206'#'Qwen/Qwen2.5-72B-Instruct'
 CURRENT_MODEL = 'gemini-2.0-flash-experimental'
