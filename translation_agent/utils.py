@@ -3,6 +3,13 @@ from typing import List, Union
 import time
 import openai
 from icecream import ic
+import json
+import hashlib
+
+silicon_flow_api_key = 'sk-iskuddjukcxxdeudrlfngjofyifccbkflggpgshvzvayduwb'#os.environ["SILICON_FLOW_API_KEY"]
+key = silicon_flow_api_key
+base_url = 'https://api.siliconflow.cn/v1'
+client = openai.OpenAI(api_key=key, base_url=base_url)
 
 
 MAX_TOKENS_PER_CHUNK = (
@@ -20,6 +27,14 @@ CURRENT_MODEL = 'gemini-exp-1206'#'Qwen/Qwen2.5-72B-Instruct'
 CURRENT_MODEL = 'gemini-2.0-flash-experimental'
 CURRENT_MODEL = 'gemini-1.5-flash'
 CURRENT_MODEL = 'gemini-2.0-flash-exp'
+
+CACHE_DIR = "completion_cache"
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+def get_cache_key(prompt: str, system_message: str, model: str) -> str:
+    """生成缓存键值"""
+    combined = f"{prompt}|{system_message}|{model}"
+    return hashlib.md5(combined.encode()).hexdigest()
 
 def get_completion(
     prompt: str,
@@ -49,6 +64,16 @@ def get_completion(
             If json_mode is False, returns the generated text as a string.
     """
 
+    # 生成缓存文件路径
+    cache_key = get_cache_key(prompt, system_message, model)
+    cache_file = os.path.join(CACHE_DIR, f"{cache_key}.json")
+    
+    # 检查缓存是否存在
+    if os.path.exists(cache_file):
+        with open(cache_file, 'r', encoding='utf-8') as f:
+            return json.load(f)['response']
+    
+    # 如果缓存不存在，调用原有的完成函数逻辑
     if 'gemini'in model:
         model = genai.GenerativeModel(model)
         response = model.generate_content(system_message + "\t" + prompt,
@@ -58,32 +83,43 @@ def get_completion(
             temperature=0.5,
             ),
         )
-        return response.text
-
-
-    if json_mode:
-        response = client.chat.completions.create(
-            model=model,
-            temperature=temperature,
-            top_p=1,
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": prompt},
-            ],
-        )
-        return response.choices[0].message.content
+        response_text = response.text
     else:
-        response = client.chat.completions.create(
-            model=model,
-            temperature=temperature,
-            top_p=1,
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": prompt},
-            ],
-        )
-        return response.choices[0].message.content
+        if json_mode:
+            response = client.chat.completions.create(
+                model=model,
+                temperature=temperature,
+                top_p=1,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": prompt},
+                ],
+            )
+            response_text = response.choices[0].message.content
+        else:
+            response = client.chat.completions.create(
+                model=model,
+                temperature=temperature,
+                top_p=1,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": prompt},
+                ],
+            )
+            response_text = response.choices[0].message.content
+    
+    # 保存结果到缓存
+    cache_data = {
+        'prompt': prompt,
+        'system_message': system_message,
+        'model': model,
+        'response': response_text
+    }
+    with open(cache_file, 'w', encoding='utf-8') as f:
+        json.dump(cache_data, f, ensure_ascii=False, indent=2)
+    
+    return response_text
 
 
 def one_chunk_initial_translation(
