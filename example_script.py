@@ -26,6 +26,7 @@ def translate_text(text, index):
 
 def translate_multiple_thread(text_splits, max_workers=4):
     remained_splits = []
+    init_count = len(global_result)
     for i, text in enumerate(text_splits):
         if i not in global_result:
             remained_splits.append([i, text])
@@ -41,6 +42,7 @@ def translate_multiple_thread(text_splits, max_workers=4):
                     print(f'Translate {text} throw an exception: {exc}')
                 finally:
                     pbar.update(1)
+    logger.info(f'Multi-thread translation done, total: {len(text_splits)}, init: {init_count}, final: {len(text_splits)}')
     return len(global_result) == len(text_splits)
 
 
@@ -69,17 +71,22 @@ if __name__ == "__main__":
 
     tries = 0
     MAX_TRIES = 5
+    total_time = 0
     while True:
         logger.info(f'Try {tries} time')
         start = time.time()
         status = translate_multiple_thread(chapters)
         end = time.time()
+        total_time += end-start
         logger.info(f'Translation done, cost {end-start} seconds. status:{status}')
         if status:
             break
         tries += 1
         if tries >= MAX_TRIES:
             logger.info('exceeed MAX_TRIES {MAX_TRIES}, break')
+            break
+    status = len(global_result) == len(chapters)
+    logger.info(f'Translation done, cost {total_time} seconds, status:{status}')
     with open('init.txt', 'w') as f_init, open('reflection.txt', 'w') as f_ref, open('final.txt', 'w') as f_final:
         for key in sorted(global_result):
             init = global_result[key][0]
@@ -88,5 +95,6 @@ if __name__ == "__main__":
             f_init.write(init+ "\n")
             f_ref.write(reflect+"\n")
             f_final.write(final)
+
 
 
