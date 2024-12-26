@@ -1,9 +1,6 @@
-import os
-
 from translation_agent import translate, split_text
 import time
 import re
-import threading
 from tqdm import tqdm
 import random
 from loguru import logger
@@ -21,7 +18,9 @@ def translate_text(text, index):
         source_text=text,
         country=country,
     )
-    global_result[index] = translation_triple
+    if translation_triple is not None:
+        global_result[index] = translation_triple
+    return translation_triple
 
 
 def translate_multiple_thread(text_splits, max_workers=4):
@@ -36,11 +35,7 @@ def translate_multiple_thread(text_splits, max_workers=4):
             # 提交每个问题的处理
             for future in concurrent.futures.as_completed(future_to_translation):
                 (index, text) = future_to_translation[future]
-                try:
-                    future.result()  # 获取结果以捕获异常
-                except Exception as exc:
-                    print(f'Translate {text} throw an exception: {exc}')
-                finally:
+                if not future.result():
                     pbar.update(1)
     logger.info(f'Multi-thread translation done, total: {len(text_splits)}, init: {init_count}, final: {len(text_splits)}')
     return len(global_result) == len(text_splits)
