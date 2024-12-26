@@ -3,6 +3,7 @@ from typing import Union
 import json
 import hashlib
 import openai
+from loguru import logger
 import google.generativeai as genai
 from dotenv import load_dotenv
 from .prompts import (
@@ -42,7 +43,7 @@ def get_cache_key(prompt: str, system_message: str, model: str) -> str:
 def get_completion(
     prompt: str,
     system_message: str = "You are a helpful assistant.",
-    model: str = 'gemini-2.0-flash-exp',
+    model_name: str = 'gemini-2.0-flash-exp',
     temperature: float = 0.3
 ) -> Union[str, dict]:
     """
@@ -52,7 +53,7 @@ def get_completion(
         prompt (str): The user's prompt or query.
         system_message (str, optional): The system message to set the context for the assistant.
             Defaults to "You are a helpful assistant.".
-        model (str, optional): The name of the OpenAI model to use for generating the completion.
+        model_name (str, optional): The name of the OpenAI model to use for generating the completion.
             Defaults to "gemini-2.0-flash-exp".
         temperature (float, optional): The sampling temperature for controlling the randomness of the generated text.
             Defaults to 0.3.
@@ -66,7 +67,7 @@ def get_completion(
     """
 
     # 生成缓存文件路径
-    cache_key = get_cache_key(prompt, system_message, model)
+    cache_key = get_cache_key(prompt, system_message, model_name)
     cache_file = os.path.join(CACHE_DIR, f"{cache_key}.json")
     
     # 检查缓存是否存在
@@ -75,8 +76,8 @@ def get_completion(
             return json.load(f)['response']
     
     # 如果缓存不存在，调用原有的完成函数逻辑
-    if 'gemini' in model:
-        model = genai.GenerativeModel(model)
+    if 'gemini' in model_name:
+        model = genai.GenerativeModel(model_name)
         try:
             response = model.generate_content(system_message + "\t" + prompt,
                 generation_config=genai.types.GenerationConfig(
@@ -91,7 +92,7 @@ def get_completion(
     else:
         try:
             response = client.chat.completions.create(
-                model=model,
+                model=model_name,
                 temperature=temperature,
                 top_p=1,
                 messages=[
@@ -108,9 +109,10 @@ def get_completion(
     cache_data = {
         'prompt': prompt,
         'system_message': system_message,
-        'model': model,
+        'model': model_name,
         'response': response_text
     }
+    logger.info(f'cache_data: {cache_data}')
     with open(cache_file, 'w', encoding='utf-8') as f:
         json.dump(cache_data, f, ensure_ascii=False, indent=2)
     
