@@ -91,5 +91,3 @@ if __name__ == "__main__":
             f_ref.write(reflect+"\n")
             f_final.write(final)
 
-
-
