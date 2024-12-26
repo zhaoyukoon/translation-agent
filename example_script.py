@@ -5,7 +5,7 @@ from tqdm import tqdm
 import random
 from loguru import logger
 import concurrent.futures
-
+import json
 global_result = dict()
 
 def translate_text(text, index):
@@ -73,7 +73,7 @@ if __name__ == "__main__":
         status = translate_multiple_thread(chapters)
         end = time.time()
         total_time += end-start
-        logger.info(f'Translation done, cost {end-start} seconds. status:{status}')
+        logger.info(f'Try {tries} translation done, cost {end-start} seconds. status:{status}')
         if status:
             break
         tries += 1
@@ -81,13 +81,13 @@ if __name__ == "__main__":
             logger.info('exceeed MAX_TRIES {MAX_TRIES}, break')
             break
     status = len(global_result) == len(chapters)
-    logger.info(f'Translation done, cost {total_time} seconds, status:{status}')
-    with open('init.txt', 'w') as f_init, open('reflection.txt', 'w') as f_ref, open('final.txt', 'w') as f_final:
-        for key in sorted(global_result):
-            init = global_result[key][0]
-            reflect = global_result[key][1]
-            final = global_result[key][2]
-            f_init.write(init+ "\n")
-            f_ref.write(reflect+"\n")
-            f_final.write(final)
-
+    logger.info(f'Final translation done, cost {total_time} seconds, status:{status}, input:{len(chapters)}, output:{len(global_result)}')
+    final_result = []
+    for i in range(len(chapters)):
+        if i in global_result:
+            final_result.append({'source':chapters[i], 'status': 'success'}.update(global_result[i]))
+        else:
+            final_result.append({'source':chapters[i], 'status': 'failed'})
+    with open(file_path.replace('.txt', time.strftime('%Y%m%d%H%M%S') + '.json'), 'w', encoding='utf-8') as f:
+        json.dump(final_result, f, ensure_ascii=False, indent=2)
+    
