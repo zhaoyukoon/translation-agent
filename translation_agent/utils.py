@@ -87,7 +87,7 @@ def get_completion(
             )
             response_text = response.text
         except Exception as e:
-            print(f'Call gemini llm {prompt} throw an exception: {e}')
+            logger.info(f'Call gemini llm {prompt} throw an exception: {e}')
             return None
     else:
         try:
@@ -102,7 +102,7 @@ def get_completion(
             )
             response_text = response.choices[0].message.content
         except Exception as e:
-            print(f'Call openai llm {prompt} throw an exception: {e}')
+            logger.info(f'Call openai llm {prompt} throw an exception: {e}')
             return None
     
     # 保存结果到缓存
@@ -296,8 +296,6 @@ def translate(
     Returns:
         str: The improved translation of the source text.
     """
-    print(len(source_text))
-
     return one_chunk_translate_text(
         source_lang, target_lang, source_text, country
     )
