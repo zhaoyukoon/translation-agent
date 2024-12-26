@@ -1,5 +1,5 @@
 import os
-from typing import List, Union
+from typing import Union
 import json
 import hashlib
 import openai
@@ -43,8 +43,7 @@ def get_completion(
     prompt: str,
     system_message: str = "You are a helpful assistant.",
     model: str = 'gemini-2.0-flash-exp',
-    temperature: float = 0.3,
-    json_mode: bool = False,
+    temperature: float = 0.3
 ) -> Union[str, dict]:
     """
     Generate a completion using the OpenAI API.
@@ -78,24 +77,32 @@ def get_completion(
     # 如果缓存不存在，调用原有的完成函数逻辑
     if 'gemini' in model:
         model = genai.GenerativeModel(model)
-        response = model.generate_content(system_message + "\t" + prompt,
-            generation_config=genai.types.GenerationConfig(
-                candidate_count=1,
-                temperature=0.5,
-            ),
-        )
-        response_text = response.text
+        try:
+            response = model.generate_content(system_message + "\t" + prompt,
+                generation_config=genai.types.GenerationConfig(
+                    candidate_count=1,
+                    temperature=temperature,
+                ),
+            )
+            response_text = response.text
+        except Exception as e:
+            print(f'Call gemini llm {prompt} throw an exception: {e}')
+            return None
     else:
-        response = client.chat.completions.create(
-            model=model,
-            temperature=temperature,
-            top_p=1,
-            messages=[
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                temperature=temperature,
+                top_p=1,
+                messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": prompt},
             ],
-        )
-        response_text = response.choices[0].message.content
+            )
+            response_text = response.choices[0].message.content
+        except Exception as e:
+            print(f'Call openai llm {prompt} throw an exception: {e}')
+            return None
     
     # 保存结果到缓存
     cache_data = {
@@ -239,15 +246,20 @@ def one_chunk_translate_text(
     translation_1 = one_chunk_initial_translation(
         source_lang, target_lang, source_text
     )
+    if translation_1 is None:
+        return None
 
     reflection = one_chunk_reflect_on_translation(
         source_lang, target_lang, source_text, translation_1, country
     )
+    if reflection is None:
+        return None
     translation_2 = one_chunk_improve_translation(
         source_lang, target_lang, source_text, translation_1, reflection
     )
-
-    return (translation_1, reflection, translation_2)
+    if translation_2 is None:
+        return None
+    return {"init_translation": translation_1, "reflection": reflection, "improved_translation": translation_2}
 
 
 def split_text(text, max_length):
@@ -267,8 +279,7 @@ def translate(
     source_lang: str,
     target_lang: str,
     source_text: str,
-    country: str = "",
-    max_tokens: int = MAX_TOKENS_PER_CHUNK,
+    country: str = ""
 ) -> str:
     """
     Translate the source_text from source_lang to target_lang.
@@ -285,8 +296,6 @@ def translate(
     """
     print(len(source_text))
 
-    final_translation_triple = one_chunk_translate_text(
+    return one_chunk_translate_text(
         source_lang, target_lang, source_text, country
     )
-
-    return final_translation_triple
