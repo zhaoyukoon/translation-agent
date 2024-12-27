@@ -9,7 +9,7 @@ import json
 global_result = dict()
 
 def translate_text(text, index):
-    time.sleep(random.randint(20, 40))
+    time.sleep(random.randint(2, 10))
     source_lang, target_lang, country = "Chinese", "English", "China"
     logger.info(f'translate {text}')
     translation_triple = translate(
@@ -58,7 +58,7 @@ def split_novel(source_text):
 if __name__ == "__main__":
     source_lang, target_lang, country = "Chinese", "English", "China"
 
-    file_path = '九州·斛珠夫人.chapt1.txt'
+    file_path = '九州·斛珠夫人.txt'
     with open(file_path, encoding="utf-8") as file:
         source_text = file.read()
 
@@ -85,9 +85,9 @@ if __name__ == "__main__":
     final_result = []
     for i in range(len(chapters)):
         if i in global_result:
-            final_result.append({'source':chapters[i], 'status': 'success'}.update(global_result[i]))
+            final_result.append({'source':chapters[i], 'status': 'success'} | global_result[i])
         else:
             final_result.append({'source':chapters[i], 'status': 'failed'})
-    with open(file_path.replace('.txt', time.strftime('%Y%m%d%H%M%S') + '.json'), 'w', encoding='utf-8') as f:
+    with open(file_path.replace('.txt', time.strftime('.%Y%m%d%H%M%S') + '.json'), 'w', encoding='utf-8') as f:
         json.dump(final_result, f, ensure_ascii=False, indent=2)
     
