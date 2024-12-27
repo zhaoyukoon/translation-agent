@@ -20,12 +20,13 @@ from .prompts import (
 load_dotenv()
 
 # 替换原有的 key 定义
-silicon_flow_api_key = os.getenv("SILICON_FLOW_API_KEY")
+siliconflow_api_key = os.getenv("SILICON_FLOW_API_KEY")
+deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
 google_api_key = os.getenv("GOOGLE_API_KEY")
 
 # 配置 clients
-base_url = 'https://api.siliconflow.cn/v1'
-client = openai.OpenAI(api_key=silicon_flow_api_key, base_url=base_url)
+siliconflow_base_url = 'https://api.siliconflow.cn/v1'
+deepseek_base_url='https://api.deepseek.com'
 
 # 配置 Google API
 genai.configure(api_key=google_api_key)
@@ -43,8 +44,8 @@ def get_cache_key(prompt: str, system_message: str, model: str) -> str:
 def get_completion(
     prompt: str,
     system_message: str = "You are a helpful assistant.",
-    model_name: str = 'gemini-2.0-flash-exp',
-    temperature: float = 0.3
+    model_name: str = 'deepseek-chat',
+    temperature: float = 1.3
 ) -> Union[str, dict]:
     """
     Generate a completion using the OpenAI API.
@@ -73,6 +74,7 @@ def get_completion(
     # 检查缓存是否存在
     if os.path.exists(cache_file):
         with open(cache_file, 'r', encoding='utf-8') as f:
+            logger.info(f'{prompt} cached')
             return json.load(f)['response']
     
     # 如果缓存不存在，调用原有的完成函数逻辑
@@ -90,6 +92,10 @@ def get_completion(
             logger.info(f'Call gemini llm {prompt} throw an exception: {e}')
             return None
     else:
+        if 'siliconflow' in model_name:
+            client = openai.OpenAI(api_key=siliconflow_api_key, base_url=siliconflow_base_url)
+        else:
+            client = openai.OpenAI(api_key=deepseek_api_key, base_url=deepseek_base_url)
         try:
             response = client.chat.completions.create(
                 model=model_name,
