@@ -11,9 +11,9 @@ from patch import (
     one_chunk_improve_translation,
     one_chunk_initial_translation,
     one_chunk_reflect_on_translation,
+    CLIENT
 )
 from simplemma import simple_tokenizer
-
 
 progress = gr.Progress()
 
@@ -108,7 +108,7 @@ def translator_sec(
 
     progress((1, 3), desc="First translation...")
     init_translation = one_chunk_initial_translation(
-        source_lang, target_lang, source_text
+        source_lang, target_lang, source_text, client=CLIENT
     )
 
     try:
@@ -119,12 +119,12 @@ def translator_sec(
 
     progress((2, 3), desc="Reflection...")
     reflection = one_chunk_reflect_on_translation(
-        source_lang, target_lang, source_text, init_translation, country
+        source_lang, target_lang, source_text, init_translation, country, client=CLIENT
     )
 
     progress((3, 3), desc="Second translation...")
     final_translation = one_chunk_improve_translation(
-        source_lang, target_lang, source_text, init_translation, reflection
+        source_lang, target_lang, source_text, init_translation, reflection, client=CLIENT
     )
 
     return init_translation, reflection, final_translation

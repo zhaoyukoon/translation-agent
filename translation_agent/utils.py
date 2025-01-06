@@ -45,8 +45,8 @@ def get_completion(
     prompt: str,
     system_message: str = "You are a helpful assistant.",
     model: str = 'deepseek-chat',
-    temperature: float = 1.3
-) -> Union[str, dict]:
+    temperature: float = 1.3,
+    client = ''):
     """
     Generate a completion using the OpenAI API.
 
@@ -125,8 +125,8 @@ def get_completion(
 
 
 def one_chunk_initial_translation(
-    source_lang: str, target_lang: str, source_text: str
-) -> str:
+    source_lang, target_lang, source_text, client =''
+):
     """
     Translate the entire text as one chunk using an LLM.
 
@@ -150,16 +150,16 @@ def one_chunk_initial_translation(
         source_text=source_text
     )
 
-    return get_completion(translation_prompt, system_message=system_message)
+    return get_completion(translation_prompt, system_message=system_message, client=client)
 
 
 def one_chunk_reflect_on_translation(
-    source_lang: str,
-    target_lang: str,
-    source_text: str,
-    translation_1: str,
-    country: str = "",
-) -> str:
+    source_lang,
+    target_lang,
+    source_text,
+    translation_1,
+    country = "", client = ''
+):
     """
     Use an LLM to reflect on the translation, treating the entire text as one chunk.
 
@@ -192,15 +192,16 @@ def one_chunk_reflect_on_translation(
         translation_1=translation_1
     )
 
-    return get_completion(reflection_prompt, system_message=system_message)
+    return get_completion(reflection_prompt, system_message=system_message, client=client)
 
 
 def one_chunk_improve_translation(
-    source_lang: str,
-    target_lang: str,
-    source_text: str,
-    translation_1: str,
-    reflection: str,
+    source_lang,
+    target_lang,
+    source_text,
+    translation_1,
+    reflection,
+    client = ''
 ) -> str:
     """
     Use the reflection to improve the translation, treating the entire text as one chunk.
@@ -229,11 +230,11 @@ def one_chunk_improve_translation(
         reflection=reflection
     )
 
-    return get_completion(prompt, system_message=system_message)
+    return get_completion(prompt, system_message=system_message, client=client)
 
 
 def one_chunk_translate_text(
-    source_lang: str, target_lang: str, source_text: str, country: str = ""
+    source_lang, target_lang, source_text, country = "", client = ''
 ) -> str:
     """
     Translate a single chunk of text from the source language to the target language.
@@ -251,18 +252,18 @@ def one_chunk_translate_text(
         str: The improved translation of the source text.
     """
     translation_1 = one_chunk_initial_translation(
-        source_lang, target_lang, source_text
+        source_lang, target_lang, source_text, client=client
     )
     if translation_1 is None:
         return None
 
     reflection = one_chunk_reflect_on_translation(
-        source_lang, target_lang, source_text, translation_1, country
+        source_lang, target_lang, source_text, translation_1, country, client=client
     )
     if reflection is None:
         return None
     translation_2 = one_chunk_improve_translation(
-        source_lang, target_lang, source_text, translation_1, reflection
+        source_lang, target_lang, source_text, translation_1, reflection, client=client
     )
     if translation_2 is None:
         return None
@@ -283,10 +284,11 @@ def split_text(text, max_length):
 
 
 def translate(
-    source_lang: str,
-    target_lang: str,
-    source_text: str,
-    country: str = ""
+    source_lang,
+    target_lang,
+    source_text,
+    country = "",
+    client = ''
 ) -> str:
     """
     Translate the source_text from source_lang to target_lang.
@@ -302,5 +304,5 @@ def translate(
         str: The improved translation of the source text.
     """
     return one_chunk_translate_text(
-        source_lang, target_lang, source_text, country
+        source_lang, target_lang, source_text, country, client=client
     )
