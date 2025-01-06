@@ -3,9 +3,12 @@ from functools import wraps
 from threading import Lock
 from typing import Optional
 
+import os
+import sys
 import openai
 import translation_agent.utils as utils
 import google.generativeai as genai
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 RPM = 60
 MODEL = ""

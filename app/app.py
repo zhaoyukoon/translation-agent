@@ -1,7 +1,8 @@
 import os
 import re
 from glob import glob
-
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import gradio as gr
 from process import (
     diff_texts,
@@ -274,18 +275,18 @@ with gr.Blocks(theme="soft", css=CSS, fill_height=True) as demo:
                 base2 = gr.Textbox(label="BASE URL", visible=False)
             with gr.Row():
                 source_lang = gr.Textbox(
-                    label="Source Lang",
-                    value="English",
+                    label="源语言",
+                    value="中文",
                     elem_classes="lang",
                 )
                 target_lang = gr.Textbox(
-                    label="Target Lang",
-                    value="Spanish",
+                    label="目标语言",
+                    value="英语",
                     elem_classes="lang",
                 )
             switch_btn = gr.Button(value="🔄️")
             country = gr.Textbox(
-                label="Country", value="Argentina", max_lines=1
+                label="国家", value="China", max_lines=1
             )
             with gr.Accordion("Advanced Options", open=False):
                 max_tokens = gr.Slider(
