@@ -3,6 +3,7 @@ from functools import wraps
 from threading import Lock
 from typing import Optional
 
+from loguru import logger
 import os
 import sys
 import openai
@@ -14,9 +15,8 @@ RPM = 60
 MODEL = ""
 TEMPERATURE = 0.3
 # Hide js_mode in UI now, update in plan.
+CLIENT = ''
 JS_MODE = False
-ENDPOINT = ""
-
 
 # Add your LLMs here
 def model_load(
@@ -28,20 +28,22 @@ def model_load(
     rpm: int = RPM,
     js_mode: bool = JS_MODE,
 ):
-    global client, RPM, MODEL, TEMPERATURE, JS_MODE, ENDPOINT
+    global CLIENT, RPM, MODEL, TEMPERATURE, JS_MODE, ENDPOINT
     ENDPOINT = endpoint
     RPM = rpm
     MODEL = model
     TEMPERATURE = temperature
     JS_MODE = js_mode
-
+    if endpoint=='Deepseek':
+        base_url = 'https://api.deepseek.com'
+    logger.info(f'load {model} for {endpoint} from {base_url} api_key {api_key}')
     if endpoint == 'Gemini':
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(model)
     elif endpoint == 'OpenAI':
-        client = openai.OpenAI(api_key=api_key)
+        CLIENT = openai.OpenAI(api_key=api_key)
     else:
-        client = openai.OpenAI(api_key=api_key, base_url=base_url) 
+        CLIENT = openai.OpenAI(api_key=api_key, base_url=base_url) 
 
 
 def rate_limit(get_max_per_minute):

@@ -2,6 +2,7 @@ import os
 import re
 from glob import glob
 import sys
+from loguru import logger
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import gradio as gr
 from process import (
@@ -45,6 +46,7 @@ def huanik(
 
     source_text = re.sub(r"(?m)^\s*$\n?", "", source_text)
 
+    logger.info(f'translate {source_text} under {model}')
     if choice:
         init_translation, reflect_translation, final_translation = (
             translator_sec(
@@ -56,19 +58,15 @@ def huanik(
                 target_lang=target_lang,
                 source_text=source_text,
                 country=country,
-                max_tokens=max_tokens,
             )
         )
-
     else:
         init_translation, reflect_translation, final_translation = translator(
             source_lang=source_lang,
             target_lang=target_lang,
             source_text=source_text,
             country=country,
-            max_tokens=max_tokens,
         )
-
     final_diff = gr.HighlightedText(
         diff_texts(init_translation, final_translation),
         label="Diff translation",
@@ -77,7 +75,6 @@ def huanik(
         visible=True,
         color_map={"removed": "red", "added": "green"},
     )
-
     return init_translation, reflect_translation, final_translation, final_diff
 
 
@@ -300,7 +297,7 @@ with gr.Blocks(theme="soft", css=CSS, fill_height=True) as demo:
                     label="Temperature",
                     minimum=0,
                     maximum=1.0,
-                    value=0.3,
+                    value=1.3,
                     step=0.1,
                 )
                 rpm = gr.Slider(
@@ -314,7 +311,7 @@ with gr.Blocks(theme="soft", css=CSS, fill_height=True) as demo:
         with gr.Column(scale=4):
             source_text = gr.Textbox(
                 label="Source Text",
-                value="If one advances confidently in the direction of his dreams, and endeavors to live the life which he has imagined, he will meet with a success unexpected in common hours.",
+                value="你可以在这里输入翻译的中文",
                 lines=12,
             )
             with gr.Tab("Final"):
