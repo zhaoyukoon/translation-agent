@@ -4,14 +4,8 @@ import docx
 import gradio as gr
 import pymupdf
 from icecream import ic
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from patch import (
-    calculate_chunk_size,
     model_load,
-    multichunk_improve_translation,
-    multichunk_initial_translation,
-    multichunk_reflect_on_translation,
-    num_tokens_in_string,
     one_chunk_improve_translation,
     one_chunk_initial_translation,
     one_chunk_reflect_on_translation,
@@ -95,77 +89,26 @@ def translator(
     max_tokens: int = 1000,
 ):
     """Translate the source_text from source_lang to target_lang."""
-    num_tokens_in_text = num_tokens_in_string(source_text)
 
-    ic(num_tokens_in_text)
 
-    if num_tokens_in_text < max_tokens:
-        ic("Translating text as single chunk")
+    ic("Translating text as single chunk")
 
-        progress((1, 3), desc="First translation...")
-        init_translation = one_chunk_initial_translation(
-            source_lang, target_lang, source_text
-        )
+    progress((1, 3), desc="First translation...")
+    init_translation = one_chunk_initial_translation(
+        source_lang, target_lang, source_text
+    )
 
-        progress((2, 3), desc="Reflection...")
-        reflection = one_chunk_reflect_on_translation(
-            source_lang, target_lang, source_text, init_translation, country
-        )
+    progress((2, 3), desc="Reflection...")
+    reflection = one_chunk_reflect_on_translation(
+        source_lang, target_lang, source_text, init_translation, country
+    )
 
-        progress((3, 3), desc="Second translation...")
-        final_translation = one_chunk_improve_translation(
-            source_lang, target_lang, source_text, init_translation, reflection
-        )
+    progress((3, 3), desc="Second translation...")
+    final_translation = one_chunk_improve_translation(
+        source_lang, target_lang, source_text, init_translation, reflection
+    )
 
-        return init_translation, reflection, final_translation
-
-    else:
-        ic("Translating text as multiple chunks")
-
-        token_size = calculate_chunk_size(
-            token_count=num_tokens_in_text, token_limit=max_tokens
-        )
-
-        ic(token_size)
-
-        text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-            model_name="gpt-4",
-            chunk_size=token_size,
-            chunk_overlap=0,
-        )
-
-        source_text_chunks = text_splitter.split_text(source_text)
-
-        progress((1, 3), desc="First translation...")
-        translation_1_chunks = multichunk_initial_translation(
-            source_lang, target_lang, source_text_chunks
-        )
-
-        init_translation = "".join(translation_1_chunks)
-
-        progress((2, 3), desc="Reflection...")
-        reflection_chunks = multichunk_reflect_on_translation(
-            source_lang,
-            target_lang,
-            source_text_chunks,
-            translation_1_chunks,
-            country,
-        )
-
-        reflection = "".join(reflection_chunks)
-
-        progress((3, 3), desc="Second translation...")
-        translation_2_chunks = multichunk_improve_translation(
-            source_lang,
-            target_lang,
-            source_text_chunks,
-            translation_1_chunks,
-            reflection_chunks,
-        )
-
-        final_translation = "".join(translation_2_chunks)
-
-        return init_translation, reflection, final_translation
+    return init_translation, reflection, final_translation
 
 
 def translator_sec(
@@ -180,84 +123,26 @@ def translator_sec(
     max_tokens: int = 1000,
 ):
     """Translate the source_text from source_lang to target_lang."""
-    num_tokens_in_text = num_tokens_in_string(source_text)
+    ic("Translating text as single chunk")
 
-    ic(num_tokens_in_text)
+    progress((1, 3), desc="First translation...")
+    init_translation = one_chunk_initial_translation(
+        source_lang, target_lang, source_text
+    )
 
-    if num_tokens_in_text < max_tokens:
-        ic("Translating text as single chunk")
+    try:
+        model_load(endpoint2, base2, model2, api_key2)
+    except Exception as e:
+        raise gr.Error(f"An unexpected error occurred: {e}") from e
 
-        progress((1, 3), desc="First translation...")
-        init_translation = one_chunk_initial_translation(
-            source_lang, target_lang, source_text
-        )
+    progress((2, 3), desc="Reflection...")
+    reflection = one_chunk_reflect_on_translation(
+        source_lang, target_lang, source_text, init_translation, country
+    )
 
-        try:
-            model_load(endpoint2, base2, model2, api_key2)
-        except Exception as e:
-            raise gr.Error(f"An unexpected error occurred: {e}") from e
+    progress((3, 3), desc="Second translation...")
+    final_translation = one_chunk_improve_translation(
+        source_lang, target_lang, source_text, init_translation, reflection
+    )
 
-        progress((2, 3), desc="Reflection...")
-        reflection = one_chunk_reflect_on_translation(
-            source_lang, target_lang, source_text, init_translation, country
-        )
-
-        progress((3, 3), desc="Second translation...")
-        final_translation = one_chunk_improve_translation(
-            source_lang, target_lang, source_text, init_translation, reflection
-        )
-
-        return init_translation, reflection, final_translation
-
-    else:
-        ic("Translating text as multiple chunks")
-
-        token_size = calculate_chunk_size(
-            token_count=num_tokens_in_text, token_limit=max_tokens
-        )
-
-        ic(token_size)
-
-        text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-            model_name="gpt-4",
-            chunk_size=token_size,
-            chunk_overlap=0,
-        )
-
-        source_text_chunks = text_splitter.split_text(source_text)
-
-        progress((1, 3), desc="First translation...")
-        translation_1_chunks = multichunk_initial_translation(
-            source_lang, target_lang, source_text_chunks
-        )
-
-        init_translation = "".join(translation_1_chunks)
-
-        try:
-            model_load(endpoint2, base2, model2, api_key2)
-        except Exception as e:
-            raise gr.Error(f"An unexpected error occurred: {e}") from e
-
-        progress((2, 3), desc="Reflection...")
-        reflection_chunks = multichunk_reflect_on_translation(
-            source_lang,
-            target_lang,
-            source_text_chunks,
-            translation_1_chunks,
-            country,
-        )
-
-        reflection = "".join(reflection_chunks)
-
-        progress((3, 3), desc="Second translation...")
-        translation_2_chunks = multichunk_improve_translation(
-            source_lang,
-            target_lang,
-            source_text_chunks,
-            translation_1_chunks,
-            reflection_chunks,
-        )
-
-        final_translation = "".join(translation_2_chunks)
-
-        return init_translation, reflection, final_translation
+    return init_translation, reflection, final_translation

@@ -23,7 +23,7 @@ def translate_text(text, index):
     return translation_triple
 
 
-def translate_multiple_thread(text_splits, max_workers=4):
+def translate_multiple_thread(text_splits, max_workers=128):
     remained_splits = []
     init_count = len(global_result)
     for i, text in enumerate(text_splits):

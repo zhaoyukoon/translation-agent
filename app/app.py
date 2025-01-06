@@ -82,10 +82,9 @@ def huanik(
 
 def update_model(endpoint):
     endpoint_model_map = {
-        "Groq": "llama3-70b-8192",
         "OpenAI": "gpt-4o",
-        "TogetherAI": "Qwen/Qwen2-72B-Instruct",
-        "Ollama": "llama3",
+        "Deepseek": "deepseek-chat",
+        "Gemini": "gemini-2.0-flash-exp",
         "CUSTOM": "",
     }
     if endpoint == "CUSTOM":
@@ -237,8 +236,8 @@ with gr.Blocks(theme="soft", css=CSS, fill_height=True) as demo:
         with gr.Column(scale=1) as menubar:
             endpoint = gr.Dropdown(
                 label="Endpoint",
-                choices=["OpenAI", "Groq", "TogetherAI", "Ollama", "CUSTOM"],
-                value="OpenAI",
+                choices=["OpenAI", "Deepseek", "Gemini", "CUSTOM"],
+                value="Deepseek",
             )
             choice = gr.Checkbox(
                 label="Additional Endpoint",
@@ -246,7 +245,7 @@ with gr.Blocks(theme="soft", css=CSS, fill_height=True) as demo:
             )
             model = gr.Textbox(
                 label="Model",
-                value="gpt-4o",
+                value="deepseek-chat",
             )
             api_key = gr.Textbox(
                 label="API_KEY",
@@ -258,16 +257,15 @@ with gr.Blocks(theme="soft", css=CSS, fill_height=True) as demo:
                     label="Additional Endpoint",
                     choices=[
                         "OpenAI",
-                        "Groq",
-                        "TogetherAI",
-                        "Ollama",
+                        "Deepseek",
+                        "Gemini",
                         "CUSTOM",
                     ],
-                    value="OpenAI",
+                    value="Gemini",
                 )
                 model2 = gr.Textbox(
                     label="Model",
-                    value="gpt-4o",
+                    value="gemini-2.0-flash-exp",
                 )
                 api_key2 = gr.Textbox(
                     label="API_KEY",
