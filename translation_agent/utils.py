@@ -44,7 +44,7 @@ def get_cache_key(prompt: str, system_message: str, model: str) -> str:
 def get_completion(
     prompt: str,
     system_message: str = "You are a helpful assistant.",
-    model_name: str = 'deepseek-chat',
+    model: str = 'deepseek-chat',
     temperature: float = 1.3
 ) -> Union[str, dict]:
     """
@@ -68,7 +68,7 @@ def get_completion(
     """
 
     # 生成缓存文件路径
-    cache_key = get_cache_key(prompt, system_message, model_name)
+    cache_key = get_cache_key(prompt, system_message, model)
     cache_file = os.path.join(CACHE_DIR, f"{cache_key}.json")
     
     # 检查缓存是否存在
@@ -78,10 +78,10 @@ def get_completion(
             return json.load(f)['response']
     
     # 如果缓存不存在，调用原有的完成函数逻辑
-    if 'gemini' in model_name:
-        model = genai.GenerativeModel(model_name)
+    if 'gemini' in model:
+        gemini_model = genai.GenerativeModel(model)
         try:
-            response = model.generate_content(system_message + "\t" + prompt,
+            response = gemini_model.generate_content(system_message + "\t" + prompt,
                 generation_config=genai.types.GenerationConfig(
                     candidate_count=1,
                     temperature=temperature,
@@ -92,13 +92,12 @@ def get_completion(
             logger.info(f'Call gemini llm {prompt} throw an exception: {e}')
             return None
     else:
-        if 'siliconflow' in model_name:
-            client = openai.OpenAI(api_key=siliconflow_api_key, base_url=siliconflow_base_url)
-        else:
-            client = openai.OpenAI(api_key=deepseek_api_key, base_url=deepseek_base_url)
+        if not client:
+            (key, url) = (siliconflow_api_key, siliconflow_base_url) if 'siliconflow' in model else (deepseek_api_key, deepseek_base_url)
+            client = openai.OpenAI(api_key=key, base_url=url)
         try:
             response = client.chat.completions.create(
-                model=model_name,
+                model=model,
                 temperature=temperature,
                 top_p=1,
                 messages=[
@@ -115,7 +114,7 @@ def get_completion(
     cache_data = {
         'prompt': prompt,
         'system_message': system_message,
-        'model': model_name,
+        'model': model,
         'response': response_text
     }
     logger.info(f'cache_data: {cache_data}')
