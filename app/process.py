@@ -86,29 +86,9 @@ def translator(
     target_lang: str,
     source_text: str,
     country: str,
-    max_tokens: int = 1000,
 ):
     """Translate the source_text from source_lang to target_lang."""
-
-
-    ic("Translating text as single chunk")
-
-    progress((1, 3), desc="First translation...")
-    init_translation = one_chunk_initial_translation(
-        source_lang, target_lang, source_text
-    )
-
-    progress((2, 3), desc="Reflection...")
-    reflection = one_chunk_reflect_on_translation(
-        source_lang, target_lang, source_text, init_translation, country
-    )
-
-    progress((3, 3), desc="Second translation...")
-    final_translation = one_chunk_improve_translation(
-        source_lang, target_lang, source_text, init_translation, reflection
-    )
-
-    return init_translation, reflection, final_translation
+    return translator_sec(endpoint2="", base2="", model2="", api_key2="", source_lang=source_lang, target_lang=target_lang, source_text=source_text, country=country)
 
 
 def translator_sec(
@@ -120,7 +100,6 @@ def translator_sec(
     target_lang: str,
     source_text: str,
     country: str,
-    max_tokens: int = 1000,
 ):
     """Translate the source_text from source_lang to target_lang."""
     ic("Translating text as single chunk")
@@ -131,7 +110,8 @@ def translator_sec(
     )
 
     try:
-        model_load(endpoint2, base2, model2, api_key2)
+        if endpoint2 and base2 and model2 and api_key2:
+            model_load(endpoint2, base2, model2, api_key2)
     except Exception as e:
         raise gr.Error(f"An unexpected error occurred: {e}") from e
 
