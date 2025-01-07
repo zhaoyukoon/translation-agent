@@ -11,10 +11,12 @@ from patch import (
     one_chunk_improve_translation,
     one_chunk_initial_translation,
     one_chunk_reflect_on_translation,
+    translate_whole_text,
     CLIENT
 )
 from simplemma import simple_tokenizer
 
+from loguru import logger
 progress = gr.Progress()
 
 
@@ -104,27 +106,25 @@ def translator_sec(
     country: str,
 ):
     """Translate the source_text from source_lang to target_lang."""
-    ic("Translating text as single chunk")
+    init_translation = ''
+    reflection = ''
+    final_translation = ''
+     
+    final_result = translate_whole_text(source_text, source_lang, target_lang, country, 64, client=CLIENT)
+    logger.info(f'final result: {final_result}')
+    for segment in final_result:
+        logger.info(f'segment {segment}')
+        if 'status' in segment and segment['status'] == 'success':
+            init_translation += segment['init_translation'] + "\n"
+            reflection += segment['reflection'] + "\n"
+            final_translation += segment['improved_translation'] + "\n"
+        else:
+            init_translation += "failed\n"
+            reflection += "failed\n"
+            final_translation += "failed\n"
 
-    progress((1, 3), desc="First translation...")
-    init_translation = one_chunk_initial_translation(
-        source_lang, target_lang, source_text, client=CLIENT
-    )
-
-    try:
-        if endpoint2 and base2 and model2 and api_key2:
-            model_load(endpoint2, base2, model2, api_key2)
-    except Exception as e:
-        raise gr.Error(f"An unexpected error occurred: {e}") from e
-
-    progress((2, 3), desc="Reflection...")
-    reflection = one_chunk_reflect_on_translation(
-        source_lang, target_lang, source_text, init_translation, country, client=CLIENT
-    )
-
-    progress((3, 3), desc="Second translation...")
-    final_translation = one_chunk_improve_translation(
-        source_lang, target_lang, source_text, init_translation, reflection, client=CLIENT
-    )
-
+    logger.info(f'translate: {source_text}')
+    logger.info(f'init translation: {init_translation}')
+    logger.info(f'reflection: {reflection}')
+    logger.info(f'final translation: {final_translation}')
     return init_translation, reflection, final_translation
