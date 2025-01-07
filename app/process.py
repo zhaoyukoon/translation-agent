@@ -104,27 +104,19 @@ def translator_sec(
     country: str,
 ):
     """Translate the source_text from source_lang to target_lang."""
-    ic("Translating text as single chunk")
-
-    progress((1, 3), desc="First translation...")
-    init_translation = one_chunk_initial_translation(
-        source_lang, target_lang, source_text, client=CLIENT
-    )
-
-    try:
-        if endpoint2 and base2 and model2 and api_key2:
-            model_load(endpoint2, base2, model2, api_key2)
-    except Exception as e:
-        raise gr.Error(f"An unexpected error occurred: {e}") from e
-
-    progress((2, 3), desc="Reflection...")
-    reflection = one_chunk_reflect_on_translation(
-        source_lang, target_lang, source_text, init_translation, country, client=CLIENT
-    )
-
-    progress((3, 3), desc="Second translation...")
-    final_translation = one_chunk_improve_translation(
-        source_lang, target_lang, source_text, init_translation, reflection, client=CLIENT
-    )
+    init_translation = ''
+    reflection = ''
+    final_translation = ''
+     
+    final_result = translate_whole_text(source_text, source_lang, target_lang, country, 64, client=CLIENT)
+    for segment in final_result:
+        if 'status' in segment and segment['status'] == 'True':
+            init_translation += segment['init_translation'] + "\n"
+            reflection += segment['reflection'] + "\n"
+            final_translation += segment['final_translation'] + "\n"
+        else:
+            init_translation += "failed\n"
+            reflection += "failed\n"
+            final_translation += "failed\n"
 
     return init_translation, reflection, final_translation
