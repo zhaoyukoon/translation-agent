@@ -11,10 +11,12 @@ from patch import (
     one_chunk_improve_translation,
     one_chunk_initial_translation,
     one_chunk_reflect_on_translation,
+    translate_whole_text,
     CLIENT
 )
 from simplemma import simple_tokenizer
 
+from loguru import logger
 progress = gr.Progress()
 
 
@@ -109,14 +111,20 @@ def translator_sec(
     final_translation = ''
      
     final_result = translate_whole_text(source_text, source_lang, target_lang, country, 64, client=CLIENT)
+    logger.info(f'final result: {final_result}')
     for segment in final_result:
-        if 'status' in segment and segment['status'] == 'True':
+        logger.info(f'segment {segment}')
+        if 'status' in segment and segment['status'] == 'success':
             init_translation += segment['init_translation'] + "\n"
             reflection += segment['reflection'] + "\n"
-            final_translation += segment['final_translation'] + "\n"
+            final_translation += segment['improved_translation'] + "\n"
         else:
             init_translation += "failed\n"
             reflection += "failed\n"
             final_translation += "failed\n"
 
+    logger.info(f'translate: {source_text}')
+    logger.info(f'init translation: {init_translation}')
+    logger.info(f'reflection: {reflection}')
+    logger.info(f'final translation: {final_translation}')
     return init_translation, reflection, final_translation

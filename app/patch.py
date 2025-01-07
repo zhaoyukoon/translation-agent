@@ -75,3 +75,4 @@ one_chunk_initial_translation = utils.one_chunk_initial_translation
 one_chunk_reflect_on_translation = utils.one_chunk_reflect_on_translation
 one_chunk_improve_translation = utils.one_chunk_improve_translation
 one_chunk_translate_text = utils.one_chunk_translate_text
+translate_whole_text = utils.translate_whole_text

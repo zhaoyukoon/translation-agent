@@ -146,6 +146,7 @@ def translate_text(text, index, source_lang, target_lang, country, client=''):
         client=client
     )
     if translation_triple is not None:
+        logger.info(f'translation triple:{translation_triple}')
         global_result[index] = translation_triple
     return translation_triple
 
