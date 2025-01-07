@@ -93,6 +93,7 @@ def update_model(endpoint):
 
 
 def read_doc(path):
+    logger.info(f"read doc {path}")
     file_type = path.split(".")[-1]
     print(file_type)
     if file_type in ["pdf", "txt", "py", "docx", "json", "cpp", "md"]:
@@ -330,7 +331,7 @@ with gr.Blocks(theme="soft", css=CSS, fill_height=True) as demo:
                 output_diff = gr.HighlightedText(visible=False)
     with gr.Row():
         submit = gr.Button(value="Translate")
-        upload = gr.UploadButton(label="Upload", file_types=["text"])
+        upload = gr.UploadButton(label="Upload", file_types=["text", ".txt", "txt", "pdf", "docx", ".pdf", ".docx"])
         export = gr.DownloadButton(visible=False)
         clear = gr.ClearButton(
             [source_text, output_init, output_reflect, output_final]
